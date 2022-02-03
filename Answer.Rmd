@@ -1,0 +1,144 @@
+---
+title: "QMH Statistics Club"
+author:
+- name: "Data Management and Data Summarization"
+date:
+output:
+  prettydoc::html_pretty:
+    df_print: paged
+    theme: architect
+    highlight: github
+    fig_width: 10
+    fig_height: 6
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = TRUE,
+    message = FALSE,
+    warning = FALSE,
+    paged.print = FALSE
+)
+options(knitr.table.format = "html")
+```
+## Libraries
+
+```{r lib}
+library(tidyverse)
+library(kableExtra)
+library(haven)
+```
+
+
+
+## Data
+
+Let’s use the given dataset (from Bangladesh Demographic and Health Survey, 2017-18). The respondents were women of reproductive age (15–49 years) who had one or more live birth in the five years preceding the survey.
+
+```{r data}
+setwd("C:/Users/has9a/R")
+bdhs_data <- read_sav("Data_Competition_level-I.sav")
+```
+
+Now take a glimpse of our data by `glimpse(bdhs_data)`.
+We see some of the variables are `haven_labelled`. We can convert these labelled variables into factors.
+This is important for modelling and/or plotting. We will do this by `as_factor` function while solving questions.
+
+
+
+## Discussion
+### #Q1
+* Selecting required variables for this question and assigning them to another variable.
+```{r}
+q1 <- bdhs_data %>% select(1,10,11,12)
+```
+
+* Observing data by `CASEID`. And checking whether the responses on other variables are same or not for every distinct respondent.
+```{r collapse=TRUE}
+nrow(distinct(q1)) == nrow(distinct(bdhs_data %>% select(1)))
+```
+
+* As it's `TRUE`, we can work with this filtered dataframe (7562 variables).
+```{r collapse=TRUE}
+q1 <- distinct(q1)
+sum(is.na(q1))  # No Missing Values
+```
+
+* Now creating new variable `media_exposure`.
+```{r}
+q1 <- q1 %>%
+  mutate(media_exposure = if_else(
+    (q1$V157 == 2 | q1$V158 == 2 | q1$V159 == 2 |
+       q1$V157 == 3 | q1$V158 == 3 | q1$V159 == 3),
+    1, 2
+  ))
+
+q1$media_exposure <- labelled(q1$media_exposure,
+                             c("Exposed"=1, "Not Exposed"=2), 
+                             label="Media Exposure")
+
+q1 = q1 %>%
+  mutate(media_exposure = as_factor(media_exposure))
+```
+
+* Visualizing `media_exposure`.
+```{r}
+kable(q1 %>%
+  group_by(media_exposure) %>%
+  summarise(n = n()) %>%
+  mutate(rel.freq = paste0(round(100 * n/sum(n), 1), "%")),
+  col.names = c("Media Exposure", "Frequency", "Percentage"))
+```
+
+
+
+### #Q2
+
+* Selecting required variables for this question and assigning them to another variable.
+```{r}
+q2 <- bdhs_data %>% select(1,15)
+```
+
+* Observing data by `CASEID`. And checking whether the responses on `wealth index factor score` are same or not for every distinct respondent.
+```{r collapse=TRUE}
+nrow(distinct(q2)) == nrow(distinct(bdhs_data %>% select(1)))
+```
+
+* As it's `TRUE`, we can work with this filtered dataframe (7562 variables).
+```{r collapse=TRUE}
+q2 <- distinct(q2)
+sum(is.na(q2))  # No Missing Values
+```
+
+* Now creating new variable `economic_status`.
+```{r}
+q2 <- q2%>%
+  mutate( economic_status = cut(V191,3,labels=c("1","2","3")))
+
+q2$economic_status <- labelled(q2$economic_status,
+                              c("Poor"=1, "Middle"=2, "Rich"=3), 
+                              label="Economic Status")
+
+q2 <- q2 %>%
+  mutate(economic_status = as_factor(economic_status))
+```
+
+* Visualizing `media_exposure`.
+```{r}
+kable(q2 %>%
+  group_by(economic_status) %>%
+  summarise(n = n()) %>%
+  mutate(rel.freq = paste0(round(100 * n/sum(n), 1), "%")),
+  col.names = c("Economic Status", "Frequency", "Percentage"))
+```
+
+
+
+
+### #Q3
+
+
+
+### #Q4
+
+
