@@ -42,12 +42,13 @@ bdhs_data <- read_sav("Data_Competition_level-I.sav")
 
 Now take a glimpse of our data by `glimpse(bdhs_data)`.
 We see some of the variables are `haven_labelled`. We can convert these labelled variables into factors.
-This is important for modelling and/or plotting. We will do this by `as_factor` function while solving questions.
+Converting to factor is important for modelling and/or plotting. We will do this by `as_factor` function while solving questions. Also we will check labels of any variable by `attributes()` function. It helps us to find out predefined value for missing values and `NA`
 
 
 
 ## Discussion
 ### #Q1
+
 * Selecting required variables for this question and assigning them to another variable.
 ```{r}
 q1 <- bdhs_data %>% select(1,10,11,12)
@@ -68,8 +69,8 @@ sum(is.na(q1))  # No Missing Values
 ```{r}
 q1 <- q1 %>%
   mutate(media_exposure = if_else(
-    (q1$V157 == 2 | q1$V158 == 2 | q1$V159 == 2 |
-       q1$V157 == 3 | q1$V158 == 3 | q1$V159 == 3),
+    (V157 == 2 | V158 == 2 | V159 == 2 |
+       V157 == 3 | V158 == 3 | V159 == 3),
     1, 2
   ))
 
@@ -90,7 +91,7 @@ kable(q1 %>%
   col.names = c("Media Exposure", "Frequency", "Percentage"))
 ```
 
-
+##### Interpretation
 
 ### #Q2
 
@@ -123,7 +124,7 @@ q2 <- q2 %>%
   mutate(economic_status = as_factor(economic_status))
 ```
 
-* Visualizing `media_exposure`.
+* Visualizing `economic_status`.
 ```{r}
 kable(q2 %>%
   group_by(economic_status) %>%
@@ -132,13 +133,73 @@ kable(q2 %>%
   col.names = c("Economic Status", "Frequency", "Percentage"))
 ```
 
-
+##### Interpretation
 
 
 ### #Q3
 
+* Selecting required variables for this question and assigning them to another variable.
+```{r}
+q3 <- bdhs_data %>% select(1,17,22)
+```
+
+* Filtering `q3` by removing first birth and its twins. Adding `NA` where preceding birth interval, `B11`, equals to 999.
+```{r}
+q3 <- q3 %>% filter(BORD != 1 & B11 != 0)
+q3[q3==999] <- NA
+```
+
+* As the preceding birth interval data is quantitative, suitable measure of central tendency is either `mean` or `median`.
+```{r collapse=TRUE}
+summary(q3$B11)
+```
+
+* Histogram will help us to to choose better measure of central tendency.
+```{r}
+hist(q3$B11,breaks=50,
+     main = "Histogram To Check Symmetry",
+     xlab = "Preceding Birth Interval",
+     ylab = "Frequency",
+     col = "#ADD8E6")
+```
+* As it does not seem symmetric, suitable measure of central tendency is `median`.
+```{r collapse=TRUE}
+median(q3$B11,na.rm = T)
+```
+##### Interpretation
 
 
 ### #Q4
+
+```{r}
+q4 = bdhs_data %>% select(1,5,18,19,20,21)
+```
+
+```{r}
+q4 <- q4 %>%
+  mutate(age_of_child = if_else(
+    (B5==1),
+    V008-B3, B7
+  ))
+```
+
+```{r}
+q4 <- q4 %>%
+  mutate(survival_status = if_else(
+    (B5==1),
+    "Survived", "Died"
+  ))
+```
+
+```{r}
+hist(q4$age_of_child[q4$B5==0],breaks = 100)
+```
+
+Median
+
+
+
+
+
 
 
