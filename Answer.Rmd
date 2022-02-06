@@ -1,15 +1,14 @@
 ---
 title: "QMH Statistics Club"
 author:
-- name: "Data Management and Data Summarization"
+- name: "<b> Data Management and Data Summarization (Batch-68) </b>"
+  affiliation: "<b> (with R, R Markdown) </b>"
 date:
 output:
   prettydoc::html_pretty:
     df_print: paged
     theme: architect
     highlight: github
-    fig_width: 10
-    fig_height: 6
 ---
 
 ```{r setup, include=FALSE}
@@ -18,15 +17,18 @@ knitr::opts_chunk$set(
     message = FALSE,
     warning = FALSE,
     paged.print = FALSE
-)
+    )
 options(knitr.table.format = "html")
 ```
+
+
 ## Libraries
+
 
 ```{r lib}
 library(tidyverse)
-library(kableExtra)
 library(haven)
+library(kableExtra)
 ```
 
 
@@ -42,164 +44,252 @@ bdhs_data <- read_sav("Data_Competition_level-I.sav")
 
 Now take a glimpse of our data by `glimpse(bdhs_data)`.
 We see some of the variables are `haven_labelled`. We can convert these labelled variables into factors.
-Converting to factor is important for modelling and/or plotting. We will do this by `as_factor` function while solving questions. Also we will check labels of any variable by `attributes()` function. It helps us to find out predefined value for missing values and `NA`
+Converting to factor is important for modelling and/or plotting. We will do this by `as_factor` function while solving questions. Also we will check labels of any variable by `attributes()` function. It helps us to analyzing data as well as to find out predefined value for missing values, `NA`.
 
 
 
 ## Discussion
 ### #Q1
+###### Required Variables:
 
-* Selecting required variables for this question and assigning them to another variable.
+`CASEID` (Case Identification),`V025` (Type of place of residence), `V106` (Highest educational level),   , `V157` (Frequency of reading newspaper or magazine), `V158` (Frequency of listening to radio), `V159` (Frequency of watching television), `M14` (Number of antenatal visits during pregnancy), `M17` (Delivery by caesarean section).
+
+###### Steps:
+
+* Selecting required variables for this question and assigning them to `q1_data`.
 ```{r}
-q1 <- bdhs_data %>% select(1,10,11,12)
+q1_data <- bdhs_data %>% select(1,8,9,10,11,12,23,24)
 ```
 
-* Observing data by `CASEID`. And checking whether the responses on other variables are same or not for every distinct respondent.
+* Observing data by `CASEID`. And checking whether the responses on variables (`CASEID`, `V157`, `V158`, `V159`), prerequisites, are same or not for every distinct respondent.
 ```{r collapse=TRUE}
-nrow(distinct(q1)) == nrow(distinct(bdhs_data %>% select(1)))
+nrow(distinct(q1_data, CASEID, V157, V158, V159, .keep_all = T)) == nrow(distinct(bdhs_data %>% select(1)))
 ```
 
 * As it's `TRUE`, we can work with this filtered dataframe (7562 variables).
 ```{r collapse=TRUE}
-q1 <- distinct(q1)
-sum(is.na(q1))  # No Missing Values
+q1_data <- distinct(q1_data, CASEID, V157, V158, V159, .keep_all = T)
 ```
 
 * Now creating new variable `media_exposure`.
 ```{r}
-q1 <- q1 %>%
+q1_data <- q1_data %>%
   mutate(media_exposure = if_else(
     (V157 == 2 | V158 == 2 | V159 == 2 |
        V157 == 3 | V158 == 3 | V159 == 3),
-    1, 2
-  ))
+    1, 2))
 
-q1$media_exposure <- labelled(q1$media_exposure,
-                             c("Exposed"=1, "Not Exposed"=2), 
-                             label="Media Exposure")
+q1_data$media_exposure <- q1_data$media_exposure %>%
+  labelled(c("Exposed"=1, "Not Exposed"=2),
+           label="Media Exposure")
+                             
 
-q1 = q1 %>%
+q1_data = q1_data %>%
   mutate(media_exposure = as_factor(media_exposure))
 ```
 
 * Visualizing `media_exposure`.
 ```{r}
-kable(q1 %>%
+kable(q1_data %>%
   group_by(media_exposure) %>%
   summarise(n = n()) %>%
   mutate(rel.freq = paste0(round(100 * n/sum(n), 1), "%")),
   col.names = c("Media Exposure", "Frequency", "Percentage"))
 ```
 
-##### Interpretation
+###### Interpretation:
 
-### #Q2
-
-* Selecting required variables for this question and assigning them to another variable.
+* For those who are `Exposed`.
 ```{r}
-q2 <- bdhs_data %>% select(1,15)
+behavior_data <- q1_data %>% select("media_exposure",
+                      "V025", "V106", "M17") %>% as_factor()
+large_data <- behavior_data %>%
+  pivot_longer(cols=c('V025', 'V106', 'M17'), names_to = "question", values_to = "response")
+
+variable_names <- list(
+  "V025" = "Place Of Residence" ,
+  "V106" = "Educational Qualification",
+  "M17" = "Delivery By Caesarean Section")
+
+variable_labeller <- function(variable,value){
+  return(variable_names[value])
+}
+large_data[large_data$media_exposure=="Exposed",] %>%
+  drop_na(response) %>%
+  ggplot(aes(y = response)) +
+  geom_bar(show.legend = T) +
+  facet_wrap(vars(question),
+             ncol = 1,
+             scales="free_y",
+             labeller = variable_labeller) +
+  labs(title = "Behavior Of The Respondents",
+       subtitle = "(Media Exposure = Exposed)",
+       x = "Number of respondents",
+       y="")
+
 ```
 
-* Observing data by `CASEID`. And checking whether the responses on `wealth index factor score` are same or not for every distinct respondent.
+* For those who are `Not Exposed`.
+```{r}
+large_data[large_data$media_exposure=="Not Exposed",] %>%
+  drop_na(response) %>%
+  ggplot(aes(y = response)) +
+  geom_bar(show.legend = T) +
+  facet_wrap(vars(question),
+             ncol = 1,
+             scales="free_y",
+             labeller = variable_labeller) +
+  labs(title = "Behavior Of The Respondents",
+       subtitle = "(Media Exposure = Exposed)",
+       x = "Number of respondents",
+       y="")
+
+```
+
+***
+***
+
+### #Q2
+###### Required Variables:
+`CASEID` (Case Identification), `V191` (Wealth index factor score).
+
+###### Steps:
+* Selecting required variables for this question and assigning them to `q2_data`.
+```{r}
+q2_data <- bdhs_data %>% select(1,15)
+```
+
+* Observing data by `CASEID`. And checking whether the responses on `V191` (wealth index factor score) are same or not for every distinct respondent.
 ```{r collapse=TRUE}
-nrow(distinct(q2)) == nrow(distinct(bdhs_data %>% select(1)))
+nrow(distinct(q2_data)) == nrow(distinct(bdhs_data %>% select(1)))
 ```
 
 * As it's `TRUE`, we can work with this filtered dataframe (7562 variables).
 ```{r collapse=TRUE}
-q2 <- distinct(q2)
-sum(is.na(q2))  # No Missing Values
+q2_data <- distinct(q2_data)
+sum(is.na(q2_data))  # No Missing Values
 ```
 
 * Now creating new variable `economic_status`.
 ```{r}
-q2 <- q2%>%
+q2_data <- q2_data%>%
   mutate( economic_status = cut(V191,3,labels=c("1","2","3")))
 
-q2$economic_status <- labelled(q2$economic_status,
+q2_data$economic_status <- labelled(q2_data$economic_status,
                               c("Poor"=1, "Middle"=2, "Rich"=3), 
                               label="Economic Status")
 
-q2 <- q2 %>%
+q2_data <- q2_data %>%
   mutate(economic_status = as_factor(economic_status))
 ```
 
 * Visualizing `economic_status`.
 ```{r}
-kable(q2 %>%
+kable(q2_data %>%
   group_by(economic_status) %>%
   summarise(n = n()) %>%
   mutate(rel.freq = paste0(round(100 * n/sum(n), 1), "%")),
   col.names = c("Economic Status", "Frequency", "Percentage"))
 ```
 
-##### Interpretation
+###### Interpretation
 
+***
+***
 
 ### #Q3
+###### Required Variables:
+`CASEID` (Case Identification), `BORD` (Birth order number), `B11` (Preceding birth interval in months).
 
-* Selecting required variables for this question and assigning them to another variable.
+###### Steps:
+* Selecting required variables for this question and assigning them to `q3_data`.
 ```{r}
-q3 <- bdhs_data %>% select(1,17,22)
+q3_data <- bdhs_data %>% select(1,17,22)
 ```
 
-* Filtering `q3` by removing first birth and its twins. Adding `NA` where preceding birth interval, `B11`, equals to 999.
+* Filtering `q3_data` by removing first birth and its twins. Adding `NA` where preceding birth interval, `B11`, equals to 999.
 ```{r}
-q3 <- q3 %>% filter(BORD != 1 & B11 != 0)
-q3[q3==999] <- NA
+q3_data <- q3_data %>% filter(BORD != 1 & B11 != 0)
+q3_data[q3_data==999] <- NA
 ```
 
 * As the preceding birth interval data is quantitative, suitable measure of central tendency is either `mean` or `median`.
 ```{r collapse=TRUE}
-summary(q3$B11)
+summary(q3_data$B11)
 ```
 
-* Histogram will help us to to choose better measure of central tendency.
+* Density curve with histogram will help us to to choose better measure of central tendency within mean and median.
 ```{r}
-hist(q3$B11,breaks=50,
-     main = "Histogram To Check Symmetry",
-     xlab = "Preceding Birth Interval",
-     ylab = "Frequency",
-     col = "#ADD8E6")
+q3_data %>% drop_na(B11) %>%
+  ggplot(aes(x = as.numeric(B11))) +
+  geom_histogram(aes(y = ..density..),
+                 binwidth = 7,
+                 fill = "#84d6e9",
+                 color = "#00b6e8") +
+  geom_density(adjust=2,
+               color = "#0294e8",
+               lwd=1)+
+  labs(title = "Histogram To Check Symmetry",
+       subtitle = "(with density curve)",
+       x = "Preceding Birth Interval",
+       y = "Density") +
+  theme_bw()
 ```
+
 * As it does not seem symmetric, suitable measure of central tendency is `median`.
 ```{r collapse=TRUE}
-median(q3$B11,na.rm = T)
+median(q3_data$B11,na.rm = T)
 ```
-##### Interpretation
+###### Interpretation
 
+***
+***
 
 ### #Q4
+###### Required Variables:
+`CASEID` (Case Identification), `V008` (Date of interview (CMC)), `B3` (Date of birth (CMC)), `B5` (Child is alive), `B7` (Age at death in months)
+
+###### Steps:
+* Selecting required variables for this question and assigning them to another variable.
 
 ```{r}
-q4 = bdhs_data %>% select(1,5,18,19,20,21)
+q4_data <- bdhs_data %>% select(1,5,18,19,21)
 ```
 
+* Creating a quantitative variable `age_of_child`. The variable takes value equal to 'current age'=`V008-B3` of the children who are alive. Alternatively, it takes value equal to 'age at death'=`B7` for those children who had died before the interview date.
 ```{r}
-q4 <- q4 %>%
+q4_data <- q4_data %>%
   mutate(age_of_child = if_else(
     (B5==1),
-    V008-B3, B7
-  ))
+    V008-B3, B7))
 ```
 
+* Creating a dichotomous variable `survival_status` which takes value `Survived` if the child is alive and `Died` if the child is not alive.
 ```{r}
-q4 <- q4 %>%
+q4_data <- q4_data %>%
   mutate(survival_status = if_else(
     (B5==1),
-    "Survived", "Died"
-  ))
+    "Survived", "Died"))
 ```
 
+* Let's check the histogram of `age_of_child` for the children who are not alive.
 ```{r}
-hist(q4$age_of_child[q4$B5==0],breaks = 100)
+q4_data[q4_data$B5==0,] %>%
+  ggplot(aes(x = age_of_child)) +
+  geom_histogram(aes(y = ..density..),
+                 binwidth = 1,
+                 fill = "#84d6e9",
+                 color = "#00b6e8") +
+  labs(title = "Histogram To Check Symmetry",
+       subtitle = "(with density curve)",
+       x = "Age Of Children Who Are Not Alive",
+       y = "Density") +
+  theme_bw()
 ```
 
-Median
+###### Interpretation:
 
 
-
-
-
-
-
+***
+***
+<b><center> END </center></b>
