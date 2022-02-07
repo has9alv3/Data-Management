@@ -44,7 +44,7 @@ bdhs_data <- read_sav("Data_Competition_level-I.sav")
 
 Now take a glimpse of our data by `glimpse(bdhs_data)`.
 We see some of the variables are `haven_labelled`. We can convert these labelled variables into factors.
-Converting to factor is important for modelling and/or plotting. We will do this by `as_factor` function while solving questions. Also we will check labels of any variable by `attributes()` function. It helps us to analyzing data as well as to find out predefined value for missing values, `NA`.
+Converting to factors is important for modelling and/or plotting. We will do this by `as_factor()` function while solving questions. Also, we will check labels of any variable by `attributes()` function. It helps us to analyze data as well as to find out predefined value for missing values, `NA`.
 
 
 
@@ -52,26 +52,33 @@ Converting to factor is important for modelling and/or plotting. We will do this
 ### #Q1
 ###### Required Variables:
 
-`CASEID` (Case Identification),`V025` (Type of place of residence), `V106` (Highest educational level),   , `V157` (Frequency of reading newspaper or magazine), `V158` (Frequency of listening to radio), `V159` (Frequency of watching television), `M14` (Number of antenatal visits during pregnancy), `M17` (Delivery by caesarean section).
+* `CASEID` (Case Identification)
+* `V025` (Type of place of residence)
+* `V106` (Highest educational level)
+* `V157` (Frequency of reading newspaper or magazine)
+* `V158` (Frequency of listening to radio)
+* `V159` (Frequency of watching television)
+* `M14` (Number of antenatal visits during pregnancy)
+* `M17` (Delivery by caesarean section)
 
 ###### Steps:
 
-* Selecting required variables for this question and assigning them to `q1_data`.
+<b>1.</b> Selecting required variables for this question and assigning them to `q1_data`.
 ```{r}
 q1_data <- bdhs_data %>% select(1,8,9,10,11,12,23,24)
 ```
 
-* Observing data by `CASEID`. And checking whether the responses on variables (`CASEID`, `V157`, `V158`, `V159`), prerequisites, are same or not for every distinct respondent.
+<b>2.</b> Observing data by `CASEID`. And checking whether the responses on variables (`CASEID`, `V157`, `V158`, `V159`), prerequisites, are same or not for every distinct respondent.
 ```{r collapse=TRUE}
 nrow(distinct(q1_data, CASEID, V157, V158, V159, .keep_all = T)) == nrow(distinct(bdhs_data %>% select(1)))
 ```
 
-* As it's `TRUE`, we can work with this filtered dataframe (7562 variables).
+<b>3.</b> As it's `TRUE`, we can work with this filtered dataframe (7562 variables).
 ```{r collapse=TRUE}
 q1_data <- distinct(q1_data, CASEID, V157, V158, V159, .keep_all = T)
 ```
 
-* Now creating new variable `media_exposure`.
+<b>4.</b> Now creating new variable `media_exposure`.
 ```{r}
 q1_data <- q1_data %>%
   mutate(media_exposure = if_else(
@@ -88,7 +95,7 @@ q1_data = q1_data %>%
   mutate(media_exposure = as_factor(media_exposure))
 ```
 
-* Visualizing `media_exposure`.
+<b>5.</b> Visualizing `media_exposure`.
 ```{r}
 kable(q1_data %>%
   group_by(media_exposure) %>%
@@ -97,27 +104,47 @@ kable(q1_data %>%
   col.names = c("Media Exposure", "Frequency", "Percentage"))
 ```
 
-###### Interpretation:
+###### Discussing Behavior Of Respondents:
 
 * For those who are `Exposed`.
-```{r}
+```{r echo=FALSE}
+colpal <- c("#29Af7F", "#1F968B", "#FDE725", "#B8DE29", "#73D055", 
+              "#55c667", "#482677", "#440154", "#287D8E", "#404788")
+
+# Checking if respondents get enough ANC visits or not
+q1_data$M14 <- q1_data$M14 %>%
+  replace_na(99)
+q1_data <- q1_data %>%
+  mutate(M14=ifelse(
+    (M14>=4 & M14!=98 & M14!=99),1,
+    ifelse((M14==98 | M14==99),NA,2)))
+q1_data$M14 <- q1_data$M14 %>%
+  labelled(c("Enough"=1, "Not Enough"=2),
+           label="ANC visit")
+
 behavior_data <- q1_data %>% select("media_exposure",
-                      "V025", "V106", "M17") %>% as_factor()
+                                    "V025", "V106","M14", "M17") %>% as_factor()
 large_data <- behavior_data %>%
-  pivot_longer(cols=c('V025', 'V106', 'M17'), names_to = "question", values_to = "response")
+  pivot_longer(cols=c('V025', 'V106',"M14", 'M17'), 
+               names_to = "question",
+               values_to = "response")
 
 variable_names <- list(
   "V025" = "Place Of Residence" ,
   "V106" = "Educational Qualification",
-  "M17" = "Delivery By Caesarean Section")
+  "M17" = "Delivery By Caesarean Section",
+  "M14" = "Antenatal Care Visit")
 
 variable_labeller <- function(variable,value){
   return(variable_names[value])
 }
 large_data[large_data$media_exposure=="Exposed",] %>%
   drop_na(response) %>%
-  ggplot(aes(y = response)) +
-  geom_bar(show.legend = T) +
+  ggplot(aes(y = response, fill = response, order = response)) +
+  geom_bar(show.legend = F) +
+  geom_text(stat = "count",
+            aes(label=..count.., hjust=-0.05, vjust=0.4),
+            size=3) +
   facet_wrap(vars(question),
              ncol = 1,
              scales="free_y",
@@ -125,24 +152,31 @@ large_data[large_data$media_exposure=="Exposed",] %>%
   labs(title = "Behavior Of The Respondents",
        subtitle = "(Media Exposure = Exposed)",
        x = "Number of respondents",
-       y="")
+       y="") +
+  theme_bw() +
+  scale_fill_manual(values = colpal)
 
 ```
 
 * For those who are `Not Exposed`.
-```{r}
+```{r echo=FALSE}
 large_data[large_data$media_exposure=="Not Exposed",] %>%
   drop_na(response) %>%
-  ggplot(aes(y = response)) +
-  geom_bar(show.legend = T) +
+  ggplot(aes(y = response, fill = response, order = response)) +
+  geom_bar(show.legend = F) +
+  geom_text(stat = "count",
+            aes(label=..count.., hjust=-0.05, vjust=0.4),
+            size=3) +
   facet_wrap(vars(question),
              ncol = 1,
              scales="free_y",
              labeller = variable_labeller) +
   labs(title = "Behavior Of The Respondents",
-       subtitle = "(Media Exposure = Exposed)",
+       subtitle = "(Media Exposure = Not Exposed)",
        x = "Number of respondents",
-       y="")
+       y="") +
+  theme_bw() +
+  scale_fill_manual(values = colpal)
 
 ```
 
@@ -151,28 +185,29 @@ large_data[large_data$media_exposure=="Not Exposed",] %>%
 
 ### #Q2
 ###### Required Variables:
-`CASEID` (Case Identification), `V191` (Wealth index factor score).
+* `CASEID` (Case Identification)
+* `V191` (Wealth index factor score)
 
 ###### Steps:
-* Selecting required variables for this question and assigning them to `q2_data`.
+<b>1.</b> Selecting required variables for this question and assigning them to `q2_data`.
 ```{r}
 q2_data <- bdhs_data %>% select(1,15)
 ```
 
-* Observing data by `CASEID`. And checking whether the responses on `V191` (wealth index factor score) are same or not for every distinct respondent.
+<b>2.</b> Observing data by `CASEID`. And checking whether the responses on `V191` (wealth index factor score) are same or not for every distinct respondent.
 ```{r collapse=TRUE}
 nrow(distinct(q2_data)) == nrow(distinct(bdhs_data %>% select(1)))
 ```
 
-* As it's `TRUE`, we can work with this filtered dataframe (7562 variables).
+<b>3.</b> As it's `TRUE`, we can work with this filtered dataframe (7562 variables).
 ```{r collapse=TRUE}
 q2_data <- distinct(q2_data)
 sum(is.na(q2_data))  # No Missing Values
 ```
 
-* Now creating new variable `economic_status`.
+<b>4.</b> Now creating new variable `economic_status`.
 ```{r}
-q2_data <- q2_data%>%
+q2_data <- q2_data %>%
   mutate( economic_status = cut(V191,3,labels=c("1","2","3")))
 
 q2_data$economic_status <- labelled(q2_data$economic_status,
@@ -183,7 +218,7 @@ q2_data <- q2_data %>%
   mutate(economic_status = as_factor(economic_status))
 ```
 
-* Visualizing `economic_status`.
+<b>5.</b> Visualizing `economic_status`.
 ```{r}
 kable(q2_data %>%
   group_by(economic_status) %>%
@@ -192,33 +227,38 @@ kable(q2_data %>%
   col.names = c("Economic Status", "Frequency", "Percentage"))
 ```
 
-###### Interpretation
+###### Describing The Variable `economic_status`:
+The variable `economic_status` follows a discrete uniform distribution with parameters a, b, and n [a,b integers with b ≥ a and n = b – a + 1]. Here, a = 1, b = 3, and n = 3.
+
+The PMF of a uniform distribution is 1/n. For n = 3, the PMF of `economic_status` should be 1/3.
+
+We find this `TRUE` because the three categories poor, middle, and rich all have a relative frequency of 33.33%.
+Both the mean and the median of `economic_status` are (a+b)/2  = 2, the middle category. From this information, we can also say that the skewness of `economic_status` is zero. The skewness is zero for all discrete uniform distributions.
 
 ***
 ***
 
 ### #Q3
 ###### Required Variables:
-`CASEID` (Case Identification), `BORD` (Birth order number), `B11` (Preceding birth interval in months).
+* `CASEID` (Case Identification) 
+* `BORD` (Birth order number)
+* `B11` (Preceding birth interval in months)
 
 ###### Steps:
-* Selecting required variables for this question and assigning them to `q3_data`.
+<b>1.</b> Selecting required variables for this question and assigning them to `q3_data`.
 ```{r}
 q3_data <- bdhs_data %>% select(1,17,22)
 ```
 
-* Filtering `q3_data` by removing first birth and its twins. Adding `NA` where preceding birth interval, `B11`, equals to 999.
+<b>2.</b> Filtering `q3_data` by removing first birth and its twins. Adding `NA` where preceding birth interval, `B11`, equals to 999.
 ```{r}
 q3_data <- q3_data %>% filter(BORD != 1 & B11 != 0)
 q3_data[q3_data==999] <- NA
 ```
 
-* As the preceding birth interval data is quantitative, suitable measure of central tendency is either `mean` or `median`.
-```{r collapse=TRUE}
-summary(q3_data$B11)
-```
+<b>3.</b> As the preceding birth interval data is quantitative, suitable measure of central tendency is either `mean` or `median`.
 
-* Density curve with histogram will help us to to choose better measure of central tendency within mean and median.
+<b>4.</b> Density curve with histogram will help us to to choose better measure of central tendency within `mean` and `median.`
 ```{r}
 q3_data %>% drop_na(B11) %>%
   ggplot(aes(x = as.numeric(B11))) +
@@ -236,27 +276,34 @@ q3_data %>% drop_na(B11) %>%
   theme_bw()
 ```
 
-* As it does not seem symmetric, suitable measure of central tendency is `median`.
+<b>5.</b> As it does not seem symmetric, suitable measure of central tendency is `median`.
 ```{r collapse=TRUE}
 median(q3_data$B11,na.rm = T)
 ```
-###### Interpretation
+###### Interpretation:
+For “preceding birth interval”, the median is 54 months (4.5 years). That informs us women tend to give birth at a 4.5 years interval.
+
+The median is a suitable measure of central tendency for skewed distributions. Extreme values affect the median less than they affect the mean. Also, we can’t be sure if the extreme values are outliers or not. For example, the minimum value in “preceding birth interval” is seven months. Guinness World Records says the shortest birth interval (not including twins) in the world is around seven months. So there is a high possibility that this is an outlier. The maximum of our data is more than sixteen years, which does not represent our data at all. Extreme values like this can highly affect the mean. Therefore, the median is a better choice.
 
 ***
 ***
 
 ### #Q4
 ###### Required Variables:
-`CASEID` (Case Identification), `V008` (Date of interview (CMC)), `B3` (Date of birth (CMC)), `B5` (Child is alive), `B7` (Age at death in months)
+* `CASEID` (Case Identification)
+* `V008` (Date of interview (CMC))
+* `B3` (Date of birth (CMC))
+* `B5` (Child is alive)
+* `B7` (Age at death in months)
 
 ###### Steps:
-* Selecting required variables for this question and assigning them to another variable.
+<b>1.</b> Selecting required variables for this question and assigning them to `q4_data`.
 
 ```{r}
 q4_data <- bdhs_data %>% select(1,5,18,19,21)
 ```
 
-* Creating a quantitative variable `age_of_child`. The variable takes value equal to 'current age'=`V008-B3` of the children who are alive. Alternatively, it takes value equal to 'age at death'=`B7` for those children who had died before the interview date.
+<b>2.</b> Creating a quantitative variable `age_of_child`. The variable takes value equal to 'current age'=`V008-B3` of the children who are alive. Alternatively, it takes value equal to 'age at death'=`B7` for those children who had died before the interview date.
 ```{r}
 q4_data <- q4_data %>%
   mutate(age_of_child = if_else(
@@ -264,7 +311,7 @@ q4_data <- q4_data %>%
     V008-B3, B7))
 ```
 
-* Creating a dichotomous variable `survival_status` which takes value `Survived` if the child is alive and `Died` if the child is not alive.
+<b>3.</b> Creating a dichotomous variable `survival_status` which takes value `Survived` if the child is alive and `Died` if the child is not alive.
 ```{r}
 q4_data <- q4_data %>%
   mutate(survival_status = if_else(
@@ -272,7 +319,7 @@ q4_data <- q4_data %>%
     "Survived", "Died"))
 ```
 
-* Let's check the histogram of `age_of_child` for the children who are not alive.
+<b>4.</b> Let's check the histogram of `age_of_child` (as it's a quantitative variable, either `mean` or `median` is better measure of central tendency) for the children who are not alive.
 ```{r}
 q4_data[q4_data$B5==0,] %>%
   ggplot(aes(x = age_of_child)) +
@@ -287,7 +334,35 @@ q4_data[q4_data$B5==0,] %>%
   theme_bw()
 ```
 
-###### Interpretation:
+<b>5.</b> It is highly skewed. So, we consider the `median` as a suitable measure of central tendency.
+```{r collapse=TRUE}
+median(q4_data$age_of_child[q4_data$B5==0], na.rm = T)
+```
+
+###### Describing Result:
+Here, the median is 0 for a total of 357 cases. Sadly enough, that tells us the children in our observation died tended to live less than a month. They died in their neonatal period.
+
+```{r echo=FALSE}
+
+neonatal <- q4_data$B7[q4_data$B7<1] %>% na.omit()
+infant <- q4_data$B7[q4_data$B7<12] %>% na.omit()
+child_death <- data.frame(Period = c("Neonatal Period\n(<1 month)","Infant\n(<1 year)"), 
+                          Total = c(length(neonatal),length(infant)))
+
+ggplot(child_death,aes(x=Period,weight=Total)) +
+  geom_bar(width = 0.2) +
+  geom_text(stat = "count", aes(label=Total,vjust=2)) +
+  labs(title = "Neonatal and Infant Death",
+       subtitle = "(among 357 childrens who are not alive)",
+       x = "Time Period",
+       y = "Frequency") +
+  theme_bw()
+  
+```
+
+Our data ranged from 0 months to 48 months, but the median lies at the minimum. It shows us how skewed our distribution is. At least 50% of the children who died in our observation died in their neonatal period.
+
+However, this does not mean the overall child mortality rate is high.
 
 
 ***
