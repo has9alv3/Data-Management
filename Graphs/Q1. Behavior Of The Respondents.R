@@ -1,3 +1,4 @@
+#Graph 1 (For Exposed To Media)
 colpal <- c("#29Af7F", "#1F968B", "#FDE725", "#B8DE29", "#73D055", 
               "#55c667", "#482677", "#440154", "#287D8E", "#404788")
 
@@ -41,6 +42,27 @@ large_data[large_data$media_exposure=="Exposed",] %>%
              labeller = variable_labeller) +
   labs(title = "Behavior Of The Respondents",
        subtitle = "(Exposed To Media)",
+       x = "Number of respondents",
+       y="") +
+  theme_bw() +
+  scale_fill_manual(values = colpal)
+
+
+
+#Graph 2 (For Not Exposed To Media)
+large_data[large_data$media_exposure=="Not Exposed",] %>%
+  drop_na(response) %>%
+  ggplot(aes(y = response, fill = response, order = response)) +
+  geom_bar(show.legend = F) +
+  geom_text(stat = "count",
+            aes(label=..count.., hjust=-0.05, vjust=0.4),
+            size=3) +
+  facet_wrap(vars(question),
+             ncol = 1,
+             scales="free_y",
+             labeller = variable_labeller) +
+  labs(title = "Behavior Of The Respondents",
+       subtitle = "(Not Exposed To Media)",
        x = "Number of respondents",
        y="") +
   theme_bw() +
