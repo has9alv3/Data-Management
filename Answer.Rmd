@@ -21,22 +21,6 @@ knitr::opts_chunk$set(
 options(knitr.table.format = "html")
 ```
 
-<font size=5><b><center> Third Year (Batch-68) </center></b></font>
-
-<br>
-<br>
-<font size=4><center> Group Members: </center></font>
-
-<font size=4><b><center> Hasnain Ahmed Alve </center></b></font>
-<font size=3><center> has9alv3@gmail.com </center></font>
-<font size=3><center> +880 1783-321960 </center></font>
-
-<font size=4><b><center> Shahriar Zaman Siham </center></b></font>
-<font size=3><center> shahriar.siham@gmail.com </center></font>
-<font size=3><center> +880 1531-261249 </center></font>
-
-<br>
-
 ## Libraries
 
 
@@ -149,7 +133,7 @@ ggplot(uses_of_media, aes(x = Class,y=Count, fill = Class)) +
   theme(legend.position="none")
 ```
 
-*<font size='2'>Code for this graph is available on our [🔗 Github Repo](https://raw.githubusercontent.com/has9alv3/Data-Management/main/Graphs/Q1.%20Media%20Exposure%20Regarding%20Different%20Source.R)</font>*
+*<font size='2'>Code for this graph is available  [🔗 here](https://raw.githubusercontent.com/has9alv3/Data-Management/main/Graphs/Q1.%20Media%20Exposure%20Regarding%20Different%20Source.R)</font>*
 
 
 It is evident from our analysis that a large number of respondents (44.9%) are not exposed to media. 54.18% of the respondents reported watching television. 3.68% reported reading newspapers or magazines, and 2.21% reported listening to the radio. 
@@ -224,7 +208,7 @@ large_data[large_data$media_exposure=="Not Exposed",] %>%
 
 ```
 
-*<font size='2'>Code for this graph is available on our [🔗 Github Repo](https://raw.githubusercontent.com/has9alv3/Data-Management/main/Graphs/Q1.%20Behavior%20Of%20The%20Respondents.R)</font>*
+*<font size='2'>Code for this graph is available  [🔗 here](https://raw.githubusercontent.com/has9alv3/Data-Management/main/Graphs/Q1.%20Behavior%20Of%20The%20Respondents.R)</font>*
 
 We have analyzed other provided variables to see if those have any relation with the behavior of our respondents regarding media exposure. And they do have. Respondents exposed to media are seen to have taken better decisions regarding antenatal care visits. We also find that respondents living in rural areas are less exposed to media. And respondents not exposed to media have relatively lower educational qualifications. We cannot say media exposure affected these variables, but we can say that media exposure does have a relation with these variables.
 
@@ -321,7 +305,7 @@ ggplot(q2_data, aes(V191, economic_status, fill = economic_status, color = econo
 guides(alpha = "none")
 ```
 
-*<font size='2'>Code for this graph is available on our [🔗 Github Repo](https://raw.githubusercontent.com/has9alv3/Data-Management/main/Graphs/Q2.%20Dispersion%20Between%20The%20Quantiles.R)</font>*
+*<font size='2'>Code for this graph is available  [🔗 here](https://raw.githubusercontent.com/has9alv3/Data-Management/main/Graphs/Q2.%20Dispersion%20Between%20The%20Quantiles.R)</font>*
 
 ***
 
@@ -455,13 +439,14 @@ ggplot(child_death, aes(x=Period, weight=Total, fill = Period)) +
   theme(legend.position="none")
 ```
 
-*<font size='2'>Code for this graph is available on our [🔗 Github Repo](https://raw.githubusercontent.com/has9alv3/Data-Management/main/Graphs/Q4.%20Neonatal%20and%20Infant%20Death.R)</font>*
+*<font size='2'>Code for this graph is available  [🔗 here](https://raw.githubusercontent.com/has9alv3/Data-Management/main/Graphs/Q4.%20Neonatal%20and%20Infant%20Death.R)</font>*
 
 ***
 
 ## Resources
 * All code are written in R.
 * The full document is made using R Markdown.
+* Code link for graphs in interpretation section are attached below the graph.
 * All .R and .Rmd files are available on our [Github Repo](https://github.com/has9alv3/Data-Management).
 
 ***
