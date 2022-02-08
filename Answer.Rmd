@@ -1,7 +1,7 @@
 ---
-title: "QMH Statistics Club"
+title: "Data Analysis Competition"
 author:
-- name: "<b> Data Management and Data Summarization (Batch-68) </b>"
+- name: "<b>Topic: Data Management and Data Summarization </b>"
   affiliation: "<b> (with R, R Markdown) </b>"
 date:
 output:
@@ -21,11 +21,27 @@ knitr::opts_chunk$set(
 options(knitr.table.format = "html")
 ```
 
+<font size=5><b><center> Third Year (Batch-68) </center></b></font>
+
+<br>
+<br>
+<font size=4><center> Group Members: </center></font>
+
+<font size=4><b><center> Hasnain Ahmed Alve </center></b></font>
+<font size=3><center> has9alv3@gmail.com </center></font>
+<font size=3><center> +880 1783-321960 </center></font>
+
+<font size=4><b><center> Shahriar Zaman Siham </center></b></font>
+<font size=3><center> shahriar.siham@gmail.com </center></font>
+<font size=3><center> +880 1531-261249 </center></font>
+
+<br>
 
 ## Libraries
 
 
 ```{r lib}
+library(scales)
 library(tidyverse)
 library(haven)
 library(kableExtra)
@@ -96,6 +112,7 @@ q1_data = q1_data %>%
 ```
 
 <b>5.</b> Visualizing `media_exposure`.
+
 ```{r}
 kable(q1_data %>%
   group_by(media_exposure) %>%
@@ -106,8 +123,38 @@ kable(q1_data %>%
 
 ###### Discussing Behavior Of Respondents:
 
-* For those who are `Exposed`.
 ```{r echo=FALSE}
+newspaper <- q1_data$V157
+radio <- q1_data$V158
+tv <- q1_data$V159
+
+uses_of_media <- data.frame(Class = c("Reads Newspaper",
+                                      "Listens To Radio", 
+                                      "Watches TV"),
+                            Total = c(length(newspaper) %>% na.omit(),
+                                      length(radio) %>% na.omit(),
+                                      length(tv) %>% na.omit()),
+                            Count = c(length(newspaper[newspaper==2 | newspaper==3]),
+                                      length(radio[radio==2 | radio==3]),
+                                      length(tv[tv==2 | tv==3])))
+
+ggplot(uses_of_media, aes(x = Class,y=Count, fill = Class)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = sprintf("%.2f%%", Count/Total * 100)), 
+            vjust = -.5)+
+  labs(title = "Media Exposure Regarding Different Source",
+       subtitle = "(Radio, Newspaper, TV)") +
+  theme_bw() +
+  scale_fill_manual(values=c('#3d8c95', '#404788', '#482677')) +
+  theme(legend.position="none")
+```
+
+*<font size='2'>Code for this graph is available on our [🔗 Github Repo](https://raw.githubusercontent.com/has9alv3/Data-Management/main/Graphs/Q1.%20Media%20Exposure%20Regarding%20Different%20Source.R)</font>*
+
+
+It is evident from our analysis that a large number of respondents (44.9%) are not exposed to media. 54.18% of the respondents reported watching television. 3.68% reported reading newspapers or magazines, and 2.21% reported listening to the radio. 
+
+```{r echo=FALSE, figures-side, fig.show='hold',out.width="50%"}
 colpal <- c("#29Af7F", "#1F968B", "#FDE725", "#B8DE29", "#73D055", 
               "#55c667", "#482677", "#440154", "#287D8E", "#404788")
 
@@ -150,16 +197,13 @@ large_data[large_data$media_exposure=="Exposed",] %>%
              scales="free_y",
              labeller = variable_labeller) +
   labs(title = "Behavior Of The Respondents",
-       subtitle = "(Media Exposure = Exposed)",
+       subtitle = "(Exposed To Media)",
        x = "Number of respondents",
        y="") +
   theme_bw() +
   scale_fill_manual(values = colpal)
 
-```
-
-* For those who are `Not Exposed`.
-```{r echo=FALSE}
+#Graph 2
 large_data[large_data$media_exposure=="Not Exposed",] %>%
   drop_na(response) %>%
   ggplot(aes(y = response, fill = response, order = response)) +
@@ -172,7 +216,7 @@ large_data[large_data$media_exposure=="Not Exposed",] %>%
              scales="free_y",
              labeller = variable_labeller) +
   labs(title = "Behavior Of The Respondents",
-       subtitle = "(Media Exposure = Not Exposed)",
+       subtitle = "(Not Exposed To Media)",
        x = "Number of respondents",
        y="") +
   theme_bw() +
@@ -180,7 +224,10 @@ large_data[large_data$media_exposure=="Not Exposed",] %>%
 
 ```
 
-***
+*<font size='2'>Code for this graph is available on our [🔗 Github Repo](https://raw.githubusercontent.com/has9alv3/Data-Management/main/Graphs/Q1.%20Behavior%20Of%20The%20Respondents.R)</font>*
+
+We have analyzed other provided variables to see if those have any relation with the behavior of our respondents regarding media exposure. And they do have. Respondents exposed to media are seen to have taken better decisions regarding antenatal care visits. We also find that respondents living in rural areas are less exposed to media. And respondents not exposed to media have relatively lower educational qualifications. We cannot say media exposure affected these variables, but we can say that media exposure does have a relation with these variables.
+
 ***
 
 ### #Q2
@@ -205,10 +252,16 @@ q2_data <- distinct(q2_data)
 sum(is.na(q2_data))  # No Missing Values
 ```
 
-<b>4.</b> Now creating new variable `economic_status`.
+<b>4.</b> Now creating new variable `economic_status` by using the 'wealth index factor score' in a proper
+way that divide the ranked 'wealth index factor score' scores in to three equal quantiles (e.g., 33.33
+percentile each) with categories: poor, middle and rich.
 ```{r}
-q2_data <- q2_data %>%
-  mutate( economic_status = cut(V191,3,labels=c("1","2","3")))
+q2_data <- bdhs_data %>% select(1,15)
+rank_q2 <- rank(q2_data$V191, ties.method = "min")
+rank_q2 <- ntile(rank_q2, 3)
+
+q2_data <- q2_data%>%
+  mutate(economic_status = rank_q2)
 
 q2_data$economic_status <- labelled(q2_data$economic_status,
                               c("Poor"=1, "Middle"=2, "Rich"=3), 
@@ -223,11 +276,28 @@ q2_data <- q2_data %>%
 kable(q2_data %>%
   group_by(economic_status) %>%
   summarise(n = n()) %>%
-  mutate(rel.freq = paste0(round(100 * n/sum(n), 1), "%")),
+  mutate(rel.freq = paste0(round(100 * n/sum(n), 2), "%")),
   col.names = c("Economic Status", "Frequency", "Percentage"))
 ```
 
+<b>6.</b> Let's see the graphical representation of `economic_status`
+
+```{r}
+ggplot(q2_data, aes(economic_status,
+                    y = (..count..)/sum(..count..),
+                    fill = economic_status)) +
+  geom_bar(width=0.5) +
+  labs(title = "Economic Status", 
+       x = "economic_status", 
+       y = "No. of observations") +
+  scale_fill_manual(values=c('#ff6340', '#ffd138', '#2ee684')) + 
+  theme(legend.position="none") +
+  scale_y_continuous(labels = function(x) paste0(x*100, "%"))
+
+```
+
 ###### Describing The Variable `economic_status`:
+
 The variable `economic_status` follows a discrete uniform distribution with parameters a, b, and n [a,b integers with b ≥ a and n = b – a + 1]. Here, a = 1, b = 3, and n = 3.
 
 The PMF of a uniform distribution is 1/n. For n = 3, the PMF of `economic_status` should be 1/3.
@@ -235,7 +305,24 @@ The PMF of a uniform distribution is 1/n. For n = 3, the PMF of `economic_status
 We find this `TRUE` because the three categories poor, middle, and rich all have a relative frequency of 33.33%.
 Both the mean and the median of `economic_status` are (a+b)/2  = 2, the middle category. From this information, we can also say that the skewness of `economic_status` is zero. The skewness is zero for all discrete uniform distributions.
 
-***
+###### Additional Notes:
+
+Quantiles divide the data into segments consisting of an equal number of observations. So it is reasonable to have 33.33% observations each for poor, middle, and rich. However, quantiles do not distribute the range of the data evenly. So these three categories do not have their Wealth Index Factor Score evenly distributed. We get a clear picture of this from box plots. The box plots show the range of each category along with other measures.
+
+```{r echo=FALSE}
+ggplot(q2_data, aes(V191, economic_status, fill = economic_status, color = economic_status, alpha = 0.1)) + 
+  geom_boxplot() + 
+  scale_fill_manual(values=c('#ff6340', '#ffd138', '#2ee684')) +
+  scale_color_manual(values=c('#eb2a10', '#eb9b10', '#00c45c')) +
+  labs(title = "Dispersion Between The Quantiles", 
+       x = "Wealth Index Factor Score", 
+       y = "economic_status") +
+  scale_x_continuous(labels = label_comma()) +
+guides(alpha = "none")
+```
+
+*<font size='2'>Code for this graph is available on our [🔗 Github Repo](https://raw.githubusercontent.com/has9alv3/Data-Management/main/Graphs/Q2.%20Dispersion%20Between%20The%20Quantiles.R)</font>*
+
 ***
 
 ### #Q3
@@ -257,6 +344,10 @@ q3_data[q3_data==999] <- NA
 ```
 
 <b>3.</b> As the preceding birth interval data is quantitative, suitable measure of central tendency is either `mean` or `median`.
+
+```{r}
+summary(q3_data$B11)
+```
 
 <b>4.</b> Density curve with histogram will help us to to choose better measure of central tendency within `mean` and `median.`
 ```{r}
@@ -280,12 +371,13 @@ q3_data %>% drop_na(B11) %>%
 ```{r collapse=TRUE}
 median(q3_data$B11,na.rm = T)
 ```
+
+
 ###### Interpretation:
-For “preceding birth interval”, the median is 54 months (4.5 years). That informs us women tend to give birth at a 4.5 years interval.
+For 'preceding birth interval', the median is 54 months (4.5 years). That informs us women tend to give birth at a 4.5 years interval.
 
-The median is a suitable measure of central tendency for skewed distributions. Extreme values affect the median less than they affect the mean. Also, we can’t be sure if the extreme values are outliers or not. For example, the minimum value in “preceding birth interval” is seven months. Guinness World Records says the shortest birth interval (not including twins) in the world is around seven months. So there is a high possibility that this is an outlier. The maximum of our data is more than sixteen years, which does not represent our data at all. Extreme values like this can highly affect the mean. Therefore, the median is a better choice.
+The median is a suitable measure of central tendency for skewed distributions. Extreme values affect the median less than they affect the mean. Also, we can’t be sure if the extreme values are outliers or not. For example, the minimum value in 'preceding birth interval' is seven months. Guinness World Records says the shortest birth interval (not including twins) in the world is around seven months. So there is a high possibility that this is an outlier. The maximum of our data is more than sixteen years, which does not represent our data at all. Extreme values like this can highly affect the mean. Therefore, the median is a better choice.
 
-***
 ***
 
 ### #Q4
@@ -328,7 +420,6 @@ q4_data[q4_data$B5==0,] %>%
                  fill = "#84d6e9",
                  color = "#00b6e8") +
   labs(title = "Histogram To Check Symmetry",
-       subtitle = "(with density curve)",
        x = "Age Of Children Who Are Not Alive",
        y = "Density") +
   theme_bw()
@@ -341,30 +432,37 @@ median(q4_data$age_of_child[q4_data$B5==0], na.rm = T)
 
 ###### Describing Result:
 Here, the median is 0 for a total of 357 cases. Sadly enough, that tells us the children in our observation died tended to live less than a month. They died in their neonatal period.
+Our data ranged from 0 months to 48 months, but the median lies at the minimum. It shows us how skewed our distribution is.  
+
+At least 50% of the children who died in our observation died in their neonatal period. From further analysis, we see out of 357 children who died, 257 died in their neonatal period. That is nearly 72%. So definitely median illustrates this issue better than mean.
+We also compared the infant death counts with neonatal deaths side-by-side in a bar chart. And this clearly shows how difficult the first one month is for a baby compared to the next eleven months.
 
 ```{r echo=FALSE}
-
 neonatal <- q4_data$B7[q4_data$B7<1] %>% na.omit()
 infant <- q4_data$B7[q4_data$B7<12] %>% na.omit()
 child_death <- data.frame(Period = c("Neonatal Period\n(<1 month)","Infant\n(<1 year)"), 
                           Total = c(length(neonatal),length(infant)))
 
-ggplot(child_death,aes(x=Period,weight=Total)) +
-  geom_bar(width = 0.2) +
+ggplot(child_death, aes(x=Period, weight=Total, fill = Period)) +
+  geom_bar(width = 0.5) +
   geom_text(stat = "count", aes(label=Total,vjust=2)) +
   labs(title = "Neonatal and Infant Death",
        subtitle = "(among 357 childrens who are not alive)",
        x = "Time Period",
        y = "Frequency") +
-  theme_bw()
-  
+  theme_bw() +
+  scale_fill_manual(values=c('#94DFFF', '#FCADB0')) +
+  theme(legend.position="none")
 ```
 
-Our data ranged from 0 months to 48 months, but the median lies at the minimum. It shows us how skewed our distribution is. At least 50% of the children who died in our observation died in their neonatal period.
-
-However, this does not mean the overall child mortality rate is high.
-
+*<font size='2'>Code for this graph is available on our [🔗 Github Repo](https://raw.githubusercontent.com/has9alv3/Data-Management/main/Graphs/Q4.%20Neonatal%20and%20Infant%20Death.R)</font>*
 
 ***
+
+## Resources
+* All code are written in R.
+* The full document is made using R Markdown.
+* All .R and .Rmd files are available on our [Github Repo](https://github.com/has9alv3/Data-Management).
+
 ***
 <b><center> END </center></b>
